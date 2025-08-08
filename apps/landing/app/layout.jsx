@@ -1,28 +1,33 @@
 export const metadata = {
-  title: 'BALTARUM — Rogue Cards',
-  description: 'Roguelike cards. Real stakes. Browser demo.',
+  title: 'BALTARUM',
+  description: 'Rogue Cards. Real stakes. On-Chain.',
   openGraph: {
-    title: 'BALTARUM — Rogue Cards',
-    description: 'Play the browser demo and join early.',
-    images: ['/og.png'], // картинку кладём в /public
+    title: 'BALTARUM',
+    description: 'Rogue Cards. Real stakes. On-Chain.',
+    url: 'https://baltarum.vercel.app',
+    siteName: 'BALTARUM',
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'BALTARUM Banner',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    creator: '@baltarum', // поменяешь, когда будет хэндл
+    creator: '@baltarum',
+    images: ['/og.png'],
   },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          background: '#0b0f14',
-          color: '#fff',
-          fontFamily: 'sans-serif',
-        }}
-      >
+      <body style={{ margin: 0, backgroundColor: '#000', color: '#fff' }}>
         {children}
       </body>
     </html>
