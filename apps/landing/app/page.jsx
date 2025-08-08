@@ -1,3 +1,5 @@
+'use client';
+
 export default function Page() {
   const PLAY_URL =
     process.env.NEXT_PUBLIC_PLAY_URL ??
@@ -29,7 +31,6 @@ export default function Page() {
         </a>
       </div>
 
-      {/* Scoped styles for the fancy button */}
       <style jsx>{`
         .btn-cta {
           position: relative;
@@ -46,8 +47,6 @@ export default function Page() {
           will-change: transform, box-shadow, filter;
           overflow: hidden;
         }
-
-        /* moving light sweep */
         .btn-cta::before {
           content: "";
           position: absolute;
@@ -61,41 +60,32 @@ export default function Page() {
             rgba(16, 185, 129, 0.25)
           );
           filter: blur(14px);
-          opacity: 0.0;
+          opacity: 0;
           transition: opacity 220ms ease;
           z-index: -1;
         }
-
         .btn-inner {
           position: relative;
           z-index: 1;
           color: #041014;
           text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
         }
-
         .btn-cta:hover {
           transform: translateY(-2px) scale(1.02);
           box-shadow: 0 16px 36px rgba(16, 185, 129, 0.45);
           filter: saturate(1.06);
         }
-
         .btn-cta:active {
           transform: translateY(0) scale(0.99);
           box-shadow: 0 10px 22px rgba(16, 185, 129, 0.35);
         }
-
         .btn-cta:hover::before {
           opacity: 1;
           animation: sweep 1.2s linear infinite;
         }
-
         @keyframes sweep {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </main>
