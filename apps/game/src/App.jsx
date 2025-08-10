@@ -3,7 +3,7 @@ import Hand from './components/Hand';
 import JokerPanel from './components/JokerPanel';
 import { JOKERS } from './lib/jokers';
 import { evaluateHand } from './lib/evaluateHand';
-import ComboToast from './components/ComboToast'; // 👈 добавлено
+import ComboToast from './components/ComboToast'; // добавлено для тоста
 
 const SUITS = ['♠','♥','♦','♣'];
 const RANKS = ['A','2','3','4','5','6','7','8','9','T','J','Q','K'];
@@ -25,8 +25,10 @@ export default function App() {
   const [plays, setPlays] = useState(2);
   const [discards, setDiscards] = useState(2);
   const [jokers] = useState(JOKERS.slice(0,3));
-  const [toast, setToast] = useState(null); // 👈 добавлено
+  const [toast, setToast] = useState(null); // добавлено для тоста
+  const [discardPile, setDiscardPile] = useState([]); // сброс карт
 
+  // Инициализация колоды и руки
   useEffect(() => {
     const d = shuffle(makeDeck());
     setDeck(d);
@@ -39,90 +41,72 @@ export default function App() {
     setSelected(sel => sel.includes(i) ? sel.filter(x=>x!==i) : [...sel, i]);
   }
 
+  // Функция для добора карт из колоды
+  function drawFromDeck(need) {
+    let d = [...deck];
+    if (d.length < need) {
+      const fresh = shuffle(makeDeck())
+        .filter(c => !hand.some(h => h.rank === c.rank && h.suit === c.suit));
+      d = [...d, ...fresh];
+    }
+    const newCards = d.slice(0, need);
+    setDeck(d.slice(need));
+    return newCards;
+  }
+
+  // Функция для завершения хода (игра карт)
   function playHand() {
     if (plays <= 0 || selected.length === 0) return;
     setPlays(p=>p-1);
     const picked = selected.map(i => hand[i]);
     const res = evaluateHand(picked);
 
-    // применяем джокеров
     let ctx = { combo: res.combo, base: res.base, mult: res.mult, bonus: 0 };
     for (const j of jokers) if (j.effect) ctx = j.effect(ctx) || ctx;
 
     const gained = Math.round((ctx.base + ctx.bonus) * ctx.mult);
     setScore(s => s + gained);
 
-    // 👇 показываем тост с названием комбы и очками
+    // Отправляем карты в сброс
+    setDiscardPile(dp => [...dp, ...picked]);
+
+    // Добираем столько карт, сколько выбрали
+    const replacements = drawFromDeck(selected.length);
+
+    // Обновляем руку (заменяем выбранные карты на новые)
+    const newHand = [...hand];
+    selected.forEach((idx, k) => newHand[idx] = replacements[k]);
+    setHand(newHand);
+    setSelected([]);
+
+    // Показать тост
     setToast(`${ctx.combo}  +${gained}`);
     setTimeout(() => setToast(null), 1200);
-
-    // заменить сыгранные карты новыми
-    const restDeck = deck.slice(5);
-    const newCards = restDeck.slice(0, selected.length);
-    const newHand = [...hand];
-    selected.forEach((idx, k) => newHand[idx] = newCards[k]);
-    setDeck(restDeck.slice(selected.length));
-    setHand(newHand);
-    setSelected([]);
   }
 
+  // Функция для сброса карт
   function discardSelected() {
     if (discards <= 0 || selected.length === 0) return;
-    setDiscards(d=>d-1);
-    const restDeck = deck.slice(5);
-    const newCards = restDeck.slice(0, selected.length);
+    setDiscards(d => d - 1);
+    const tossed = selected.map(i => hand[i]);
+    setDiscardPile(dp => [...dp, ...tossed]);
+
+    const replacements = drawFromDeck(selected.length);
+
     const newHand = [...hand];
-    selected.forEach((idx, k) => newHand[idx] = newCards[k]);
-    setDeck(restDeck.slice(selected.length));
+    selected.forEach((idx, k) => newHand[idx] = replacements[k]);
     setHand(newHand);
     setSelected([]);
   }
 
+  // Функция для перезапуска игры
   function restart() {
     const d = shuffle(makeDeck());
     setDeck(d);
     setHand(drawN(d, 5));
+    setDiscardPile([]);
     setSelected([]);
     setScore(0); setRound(1); setTarget(60); setPlays(2); setDiscards(2);
   }
 
-  useEffect(() => {
-    if (score >= target || (plays <= 0 && discards <= 0)) {
-      // конец раунда
-      if (score >= target) {
-        setRound(r=>r+1);
-        setTarget(t=>Math.round(t*1.25));
-      }
-      setPlays(2); setDiscards(2);
-    }
-  }, [score, plays, discards]); // простая логика для демо
-
-  return (
-    <div style={{ minHeight:'100vh', background:'#0b0f14', color:'#fff', display:'grid', gridTemplateColumns:'1fr 280px' }}>
-      <div style={{ padding:20 }}>
-        <div style={{ display:'flex', gap:16, marginBottom:16, alignItems:'center', flexWrap:'wrap' }}>
-          <strong>Round: {round}</strong>
-          <span>Score: {score} / {target}</span>
-          <span>Plays: {plays}</span>
-          <span>Discards: {discards}</span>
-          <button onClick={playHand} style={btn}>Play Hand</button>
-          <button onClick={discardSelected} style={btnGhost}>Discard Selected</button>
-          <button onClick={restart} style={btnGhost}>Restart</button>
-        </div>
-
-        <Hand cards={hand} selected={selected} onToggle={toggle} />
-        <div style={{ textAlign:'center', marginTop:8, opacity:.85 }}>
-          {selected.length ? `${selected.length} selected` : 'Select cards to play/discard'}
-        </div>
-      </div>
-
-      <JokerPanel jokers={jokers} />
-
-      {/* 👇 тост поверх всего */}
-      <ComboToast show={!!toast} text={toast} />
-    </div>
-  );
-}
-
-const btn = { padding:'10px 16px', borderRadius:10, border:'none', background:'#10b981', color:'#041014', fontWeight:800, cursor:'pointer' };
-const btnGhost = { padding:'10px 16px', borderRadius:10, border:'1px solid rgba(255,255,255,.2)', background:'transparent', color:'#fff', cursor:'pointer' };
+  // Обработка зав
