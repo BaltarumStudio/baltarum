@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Hand from './components/Hand';
 import JokerPanel from './components/JokerPanel';
 import { JOKERS } from './lib/jokers';
 import { evaluateHand } from './lib/evaluateHand';
+import ComboToast from './components/ComboToast'; // 👈 добавлено
 
 const SUITS = ['♠','♥','♦','♣'];
 const RANKS = ['A','2','3','4','5','6','7','8','9','T','J','Q','K'];
@@ -24,6 +25,7 @@ export default function App() {
   const [plays, setPlays] = useState(2);
   const [discards, setDiscards] = useState(2);
   const [jokers] = useState(JOKERS.slice(0,3));
+  const [toast, setToast] = useState(null); // 👈 добавлено
 
   useEffect(() => {
     const d = shuffle(makeDeck());
@@ -49,6 +51,10 @@ export default function App() {
 
     const gained = Math.round((ctx.base + ctx.bonus) * ctx.mult);
     setScore(s => s + gained);
+
+    // 👇 показываем тост с названием комбы и очками
+    setToast(`${ctx.combo}  +${gained}`);
+    setTimeout(() => setToast(null), 1200);
 
     // заменить сыгранные карты новыми
     const restDeck = deck.slice(5);
@@ -111,6 +117,9 @@ export default function App() {
       </div>
 
       <JokerPanel jokers={jokers} />
+
+      {/* 👇 тост поверх всего */}
+      <ComboToast show={!!toast} text={toast} />
     </div>
   );
 }
