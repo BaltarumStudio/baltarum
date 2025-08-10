@@ -56,35 +56,41 @@ export default function App() {
 
   // Функция для завершения хода (игра карт)
  function playHand() {
-    if (plays <= 0 || selected.length === 0) return;
-    setPlays(p => p - 1); // уменьшаем оставшиеся ходы
+  if (plays <= 0 || selected.length === 0) return;
+  setPlays(p => p - 1); // уменьшаем оставшиеся ходы
 
-    const picked = selected.map(i => hand[i]); // выбираем карты, которые мы собираемся сыграть
-    const res = evaluateHand(picked); // оцениваем комбинацию
+  // Оценка комбинации выбранных карт
+  const picked = selected.map(i => hand[i]);
+  const res = evaluateHand(picked); // используем функцию для вычисления очков
 
-    // Применяем джокеров
-    let ctx = { combo: res.combo, base: res.base, mult: res.mult, bonus: 0 };
-    for (const j of jokers) if (j.effect) ctx = j.effect(ctx) || ctx;
+  let ctx = { combo: res.combo, base: res.base, mult: res.mult, bonus: 0 };
 
-    const gained = Math.round((ctx.base + ctx.bonus) * ctx.mult);
-    setScore(s => s + gained); // обновляем очки
+  // Применяем джокеров
+  for (const j of jokers) if (j.effect) ctx = j.effect(ctx) || ctx;
 
-    // Отправляем карты в сброс
-    setDiscardPile(dp => [...dp, ...picked]);
+  // Рассчитываем очки
+  const gained = Math.round((ctx.base + ctx.bonus) * ctx.mult);
+  setScore(s => s + gained); // обновляем счет
 
-    // Добираем столько карт, сколько мы выбрали
-    const replacements = drawFromDeck(selected.length);
+  // Отправляем карты в сброс
+  setDiscardPile(dp => [...dp, ...picked]);
 
-    // Обновляем руку (заменяем выбранные карты на новые)
-    const newHand = [...hand];
-    selected.forEach((idx, k) => newHand[idx] = replacements[k]);
-    setHand(newHand); // обновляем состояние руки
-    setSelected([]); // сбрасываем выбор карт
+  // Добираем столько карт, сколько выбрали
+  const replacements = drawFromDeck(selected.length);
 
-    // Показываем тост
-    setToast(`${ctx.combo} +${gained}`);
-    setTimeout(() => setToast(null), 1200);
+  // Обновляем руку (заменяем выбранные карты на новые)
+  const newHand = [...hand];
+  selected.forEach((idx, k) => newHand[idx] = replacements[k]);
+  setHand(newHand);
+
+  // Очищаем выбранные карты
+  setSelected([]);
+
+  // Показать тост с результатами
+  setToast(`${ctx.combo} +${gained}`);
+  setTimeout(() => setToast(null), 1200);
 }
+
 
   // Функция для сброса карт
   function discardSelected() {
