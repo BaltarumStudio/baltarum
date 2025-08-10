@@ -55,34 +55,36 @@ export default function App() {
   }
 
   // Функция для завершения хода (игра карт)
-  function playHand() {
+ function playHand() {
     if (plays <= 0 || selected.length === 0) return;
-    setPlays(p=>p-1);
-    const picked = selected.map(i => hand[i]);
-    const res = evaluateHand(picked);
+    setPlays(p => p - 1); // уменьшаем оставшиеся ходы
 
+    const picked = selected.map(i => hand[i]); // выбираем карты, которые мы собираемся сыграть
+    const res = evaluateHand(picked); // оцениваем комбинацию
+
+    // Применяем джокеров
     let ctx = { combo: res.combo, base: res.base, mult: res.mult, bonus: 0 };
     for (const j of jokers) if (j.effect) ctx = j.effect(ctx) || ctx;
 
     const gained = Math.round((ctx.base + ctx.bonus) * ctx.mult);
-    setScore(s => s + gained);
+    setScore(s => s + gained); // обновляем очки
 
     // Отправляем карты в сброс
     setDiscardPile(dp => [...dp, ...picked]);
 
-    // Добираем столько карт, сколько выбрали
+    // Добираем столько карт, сколько мы выбрали
     const replacements = drawFromDeck(selected.length);
 
     // Обновляем руку (заменяем выбранные карты на новые)
     const newHand = [...hand];
     selected.forEach((idx, k) => newHand[idx] = replacements[k]);
-    setHand(newHand);
-    setSelected([]);
+    setHand(newHand); // обновляем состояние руки
+    setSelected([]); // сбрасываем выбор карт
 
-    // Показать тост
-    setToast(`${ctx.combo}  +${gained}`);
+    // Показываем тост
+    setToast(`${ctx.combo} +${gained}`);
     setTimeout(() => setToast(null), 1200);
-  }
+}
 
   // Функция для сброса карт
   function discardSelected() {
