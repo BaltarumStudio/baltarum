@@ -3,14 +3,13 @@ import Hand from './components/Hand';
 import JokerPanel from './components/JokerPanel';
 import { JOKERS } from './lib/jokers';
 import { evaluateHand } from './lib/evaluateHand';
-import ComboToast from './components/ComboToast'; // добавлено для тоста
 
-const SUITS = ['♠','♥','♦','♣'];
-const RANKS = ['A','2','3','4','5','6','7','8','9','T','J','Q','K'];
+const SUITS = ['♠', '♥', '♦', '♣'];
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
 
 function makeDeck() {
   const d = [];
-  for (const s of SUITS) for (const r of RANKS) d.push({ rank:r, suit:s });
+  for (const s of SUITS) for (const r of RANKS) d.push({ rank: r, suit: s });
   return d;
 }
 function drawN(deck, n) { return deck.slice(0, n); }
@@ -24,37 +23,20 @@ export default function App() {
   const [target, setTarget] = useState(60);
   const [plays, setPlays] = useState(2);
   const [discards, setDiscards] = useState(2);
-  const [jokers] = useState(JOKERS.slice(0,3));
-  const [toast, setToast] = useState(null); // добавлено для тоста
-  const [discardPile, setDiscardPile] = useState([]); // сброс карт
+  const [jokers] = useState(JOKERS.slice(0, 3));
 
-  // Инициализация колоды и руки
   useEffect(() => {
     const d = shuffle(makeDeck());
     setDeck(d);
     setHand(drawN(d, 5));
   }, []);
 
-  function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+  function shuffle(a) { return a.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(x => x[1]); }
 
   function toggle(i) {
-    setSelected(sel => sel.includes(i) ? sel.filter(x=>x!==i) : [...sel, i]);
+    setSelected(sel => sel.includes(i) ? sel.filter(x => x !== i) : [...sel, i]);
   }
 
-  // Функция для добора карт из колоды
-  function drawFromDeck(need) {
-    let d = [...deck];
-    if (d.length < need) {
-      const fresh = shuffle(makeDeck())
-        .filter(c => !hand.some(h => h.rank === c.rank && h.suit === c.suit));
-      d = [...d, ...fresh];
-    }
-    const newCards = d.slice(0, need);
-    setDeck(d.slice(need));
-    return newCards;
-  }
-
-  // Функция для завершения хода (игра карт)
   function playHand() {
     if (plays <= 0 || selected.length === 0) return;
     setPlays(p => p - 1); // уменьшаем оставшиеся ходы
@@ -79,6 +61,7 @@ export default function App() {
     const newHand = [...hand];
     selected.forEach((idx, k) => newHand[idx] = replacements[k]);
     setHand(newHand); // обновляем состояние руки
+
     setSelected([]); // сбрасываем выбор карт
 
     // Показываем тост
@@ -86,41 +69,42 @@ export default function App() {
     setTimeout(() => setToast(null), 1200);
   }
 
-  // Функция для сброса карт
   function discardSelected() {
     if (discards <= 0 || selected.length === 0) return;
-    setDiscards(d => d - 1);
-    const tossed = selected.map(i => hand[i]);
-    setDiscardPile(dp => [...dp, ...tossed]);
+    setDiscards(d => d - 1); // уменьшаем оставшиеся сбросы
 
+    // Отправляем карты в сброс
+    setDiscardPile(dp => [...dp, ...selected.map(i => hand[i])]);
+
+    // Добираем столько карт, сколько выбрали
     const replacements = drawFromDeck(selected.length);
 
+    // Обновляем руку (заменяем выбранные карты на новые)
     const newHand = [...hand];
     selected.forEach((idx, k) => newHand[idx] = replacements[k]);
-    setHand(newHand); // обновляем руку
-    setSelected([]); // сбрасываем выбор
+    setHand(newHand); // обновляем состояние руки
+
+    setSelected([]); // сбрасываем выбор карт
   }
 
-  // Функция для перезапуска игры
   function restart() {
     const d = shuffle(makeDeck());
     setDeck(d);
     setHand(drawN(d, 5));
-    setDiscardPile([]);
     setSelected([]);
     setScore(0); setRound(1); setTarget(60); setPlays(2); setDiscards(2);
   }
 
-  // Обработка завершения раунда
   useEffect(() => {
     if (score >= target || (plays <= 0 && discards <= 0)) {
+      // конец раунда
       if (score >= target) {
         setRound(r => r + 1);
         setTarget(t => Math.round(t * 1.25));
       }
       setPlays(2); setDiscards(2);
     }
-  }, [score, plays, discards]);
+  }, [score, plays, discards]); // простая логика для демо
 
   return (
     <div style={{ minHeight: '100vh', background: '#0b0f14', color: '#fff', display: 'grid', gridTemplateColumns: '1fr 280px' }}>
@@ -142,12 +126,15 @@ export default function App() {
       </div>
 
       <JokerPanel jokers={jokers} />
-
-      {/* Тост поверх */}
-      <ComboToast show={!!toast} text={toast} />
     </div>
   );
 }
 
 const btn = { padding: '10px 16px', borderRadius: 10, border: 'none', background: '#10b981', color: '#041014', fontWeight: 800, cursor: 'pointer' };
 const btnGhost = { padding: '10px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,.2)', background: 'transparent', color: '#fff', cursor: 'pointer' };
+
+function setDiscardPile(callback) {
+  // это пример, функция должна обновить сброс карт
+  // реализация будет зависеть от того, как вы храните состояние сброса
+  // добавьте сюда логику, которая обновляет discardPile
+}
